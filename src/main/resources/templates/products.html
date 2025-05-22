@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout1}"
+>
+<head>
+    <title>Products</title>
+</head>
+<body>
+<div layout:fragment="content1">
+    <!-- Alert messages container -->
+    <div id="alertContainer">
+        <!-- Success message example (initially hidden) -->
+        <div class="alert alert-success alert-dismissible fade show d-none" role="alert" id="successAlert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span id="successMessage">Operation completed successfully!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Error message example (initially hidden) -->
+        <div class="alert alert-danger alert-dismissible fade show d-none" role="alert" id="errorAlert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="errorMessage">An error occurred. Please try again.</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white d-flex align-items-center">
+                    <i class="bi bi-search text-primary me-2 fs-5"></i>
+                    <h5 class="mb-0">Search Products</h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/search}" method="get" class="mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" name="keyword" id="searchInput" 
+                                   class="form-control border-start-0 ps-0 shadow-none" 
+                                   placeholder="Search products..." th:value="${keyword}" autocomplete="off">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search me-1 d-none d-sm-inline"></i>Search
+                            </button>
+                        </div>
+                        <div id="suggestions" class="suggestions"></div>
+                    </form>
+                    <div class="mt-3">
+                        <h6 class="text-muted mb-2"><i class="bi bi-lightbulb me-2"></i>Suggested searches:</h6>
+                        <div class="d-flex flex-wrap gap-2" th:if="${suggestedTerms != null}">
+                            <a th:each="term : ${suggestedTerms}" th:href="@{/search(keyword=${term})}" 
+                               class="badge rounded-pill bg-light text-dark text-decoration-none p-2 border">
+                                <i class="bi bi-tag me-1"></i>
+                                <span th:text="${term}"></span>
+                            </a>
+                        </div>
+                        <div th:if="${suggestedTerms == null || suggestedTerms.isEmpty()}">
+                            <span class="text-muted fst-italic">No suggestions available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV Import Form (Admin only) -->
+    <div class="card shadow-sm mb-4" sec:authorize="hasRole('ADMIN')">
+        <div class="card-header bg-white d-flex align-items-center py-3">
+            <i class="bi bi-file-earmark-arrow-up text-primary me-2 fs-4"></i>
+            <h4 class="mb-0">Import Products from CSV</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" th:action="@{/admin/importCsv}" enctype="multipart/form-data" class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="csvFile" class="form-label">Select CSV File</label>
+                    <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required>
+                    <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        CSV format: name,price,quantity (one product per line)
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-upload me-2"></i>Importer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Products List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-box-seam text-primary me-2 fs-4"></i>
+                <h4 class="mb-0">Products List</h4>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/cart" class="btn btn-success shadow-sm">
+                    <i class="bi bi-cart me-2"></i>View Cart
+                </a>
+                <div sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/admin/newProduct}" class="btn btn-primary shadow-sm">
+                        <i class="bi bi-plus-lg me-2"></i>New Product
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">#</th>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="p:${productList}" class="align-middle">
+                        <td class="ps-4" th:text="${p.id}"></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle p-2 me-3">
+                                    <i class="bi bi-box text-primary"></i>
+                                </div>
+                                <span th:text="${p.name}" class="fw-medium"></span>
+                            </div>
+                        </td>
+                        <td th:text="${p.price}"></td>
+                        <td th:text="${p.quantity}"></td>
+                        <td>
+                            <!-- Status badges based on quantity -->
+                            <span th:if="${p.quantity == 0}" class="badge bg-danger">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Rupture
+                            </span>
+                            <span th:if="${p.quantity > 0 && p.quantity < 5}" class="badge bg-warning text-dark">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i>Faible stock
+                            </span>
+                            <span th:if="${p.quantity >= 5}" class="badge bg-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>Disponible
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-2">
+                                <!-- Add to cart button for all users -->
+                                <form th:action="@{/cart/add}" method="post" class="d-inline">
+                                    <input type="hidden" name="id" th:value="${p.id}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button class="btn btn-outline-success btn-sm" type="submit">
+                                        <i class="bi bi-cart-plus me-1"></i>Ajouter au panier
+                                    </button>
+                                </form>
+
+                                <!-- Admin actions -->
+                                <div sec:authorize="hasRole('ADMIN')" class="d-flex gap-2">
+                                    <a th:href="@{/edit/{id}(id=${p.id})}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-pencil me-1"></i>Edit
+                                    </a>
+                                    <form method="post" th:action="@{/admin/delete}" class="delete-form">
+                                        <input type="hidden" name="id" th:value="${p.id}">
+                                        <button class="btn btn-outline-danger btn-sm" type="button" 
+                                                onclick="confirmDelete(this.form, this.form.querySelector('input[name=id]').value)">
+                                            <i class="bi bi-trash me-1"></i>Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${productList.isEmpty()}">
+                        <td colspan="6" class="text-center py-5">
+                            <i class="bi bi-inbox text-muted fs-1"></i>
+                            <p class="mt-3 mb-0 text-muted">No products found</p>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container p-3 border-top" th:if="${totalPages > 0}">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <!-- Previous button -->
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                            <!-- For search results -->
+                            <a class="page-link" th:if="${keyword != null}" 
+                               th:href="@{/search(page=${currentPage - 1}, size=5, keyword=${keyword})}" 
+                               aria-label="Précédent">
+                                <i class="bi bi-chevron-left me-1"></i>
+                                <span>Précédent</span>
+                            </a>
+                            <!-- For regular index -->
+                            <a class="page-link" th:unless="${keyword != null}" 
+                               th:href="@{/user/index(page=${currentPage - 1}, size=5)}" 
+                               aria-label="Précédent">
+                                <i class="bi bi-chevron-left me-1"></i>
+                                <span>Précédent</span>
+                            </a>
+                        </li>
+
+                        <!-- Page numbers -->
+                        <li class="page-item" th:each="pageNumber : ${pageNumbers}" 
+                            th:classappend="${pageNumber == currentPage} ? 'active' : ''">
+                            <!-- For search results -->
+                            <a class="page-link" th:if="${keyword != null}" 
+                               th:href="@{/search(page=${pageNumber}, size=5, keyword=${keyword})}" 
+                               th:text="${pageNumber + 1}"></a>
+                            <!-- For regular index -->
+                            <a class="page-link" th:unless="${keyword != null}" 
+                               th:href="@{/user/index(page=${pageNumber}, size=5)}" 
+                               th:text="${pageNumber + 1}"></a>
+                        </li>
+
+                        <!-- Next button -->
+                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
+                            <!-- For search results -->
+                            <a class="page-link" th:if="${keyword != null}" 
+                               th:href="@{/search(page=${currentPage + 1}, size=5, keyword=${keyword})}" 
+                               aria-label="Suivant">
+                                <span>Suivant</span>
+                                <i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                            <!-- For regular index -->
+                            <a class="page-link" th:unless="${keyword != null}" 
+                               th:href="@{/user/index(page=${currentPage + 1}, size=5)}" 
+                               aria-label="Suivant">
+                                <span>Suivant</span>
+                                <i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search suggestions functionality
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsDiv = document.getElementById('suggestions');
+
+        if (searchInput && suggestionsDiv) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    suggestionsDiv.style.display = 'none';
+                    return;
+                }
+
+                fetch(`/api/suggestions?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestionsDiv.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(suggestion => {
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                div.textContent = suggestion;
+                                div.addEventListener('click', function() {
+                                    searchInput.value = suggestion;
+                                    suggestionsDiv.style.display = 'none';
+                                    document.querySelector('form').submit();
+                                });
+                                suggestionsDiv.appendChild(div);
+                            });
+                            suggestionsDiv.style.display = 'block';
+                        } else {
+                            suggestionsDiv.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching suggestions:', error);
+                        suggestionsDiv.style.display = 'none';
+                    });
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (e.target !== searchInput && e.target !== suggestionsDiv) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+
+            // Show suggestions when focusing on input
+            searchInput.addEventListener('focus', function() {
+                if (this.value.trim().length >= 2) {
+                    const event = new Event('input');
+                    searchInput.dispatchEvent(event);
+                }
+            });
+        }
+
+        // User feedback messages functionality
+        window.showSuccessMessage = function(message) {
+            const successAlert = document.getElementById('successAlert');
+            const successMessage = document.getElementById('successMessage');
+
+            if (successAlert && successMessage) {
+                successMessage.textContent = message;
+                successAlert.classList.remove('d-none');
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    successAlert.classList.add('d-none');
+                }, 5000);
+            }
+        };
+
+        window.showErrorMessage = function(message) {
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMessage = document.getElementById('errorMessage');
+
+            if (errorAlert && errorMessage) {
+                errorMessage.textContent = message;
+                errorAlert.classList.remove('d-none');
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    errorAlert.classList.add('d-none');
+                }, 5000);
+            }
+        };
+
+        // Delete confirmation functionality
+        window.confirmDelete = function(form, productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                try {
+                    form.submit();
+                    // Note: This message won't actually show since the page will reload
+                    window.showSuccessMessage('Product deleted successfully!');
+                } catch (error) {
+                    window.showErrorMessage('Error deleting product: ' + error.message);
+                }
+            }
+        };
+
+        // Check for flash messages from server
+        /*[# th:if="${successMessage}"]*/
+        window.showSuccessMessage(/*[[${successMessage}]]*/);
+        /*[/]*/
+
+        /*[# th:if="${errorMessage}"]*/
+        window.showErrorMessage(/*[[${errorMessage}]]*/);
+        /*[/]*/
+
+        // Check for URL parameters to show messages (legacy support)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success')) {
+            window.showSuccessMessage(urlParams.get('success') || 'Operation completed successfully!');
+        }
+        if (urlParams.has('error')) {
+            window.showErrorMessage(urlParams.get('error') || 'An error occurred. Please try again.');
+        }
+    });
+
+    // Note: Cart functionality is now handled server-side
+
+    // Note: updateCartBadge function is now defined in layout1.html
+</script>
+</body>
+</html>
