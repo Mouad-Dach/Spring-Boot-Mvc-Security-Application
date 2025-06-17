@@ -28,4 +28,6 @@ public class Product {
     private double price;
     @Min(1)
     private double quantity;
+    private boolean selected;
+    private boolean promotion;
 }

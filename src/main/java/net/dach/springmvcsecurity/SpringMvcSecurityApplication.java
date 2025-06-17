@@ -24,6 +24,7 @@ public class SpringMvcSecurityApplication {
                             .name("Ordinateur Portable")
                             .price(10000)
                             .quantity(10)
+                            .promotion(true)
                     .build());
             productRepository.save(Product.builder()
                     .name("Imprimante Laser")
@@ -34,8 +35,9 @@ public class SpringMvcSecurityApplication {
                     .name("Smartphone Premium")
                     .price(12000)
                     .quantity(33)
+                    .promotion(true)
                     .build());
-                    
+
             // Additional products with varied names and realistic prices/quantities
             productRepository.save(Product.builder()
                     .name("Souris Sans Fil")
@@ -46,6 +48,7 @@ public class SpringMvcSecurityApplication {
                     .name("Casque Audio Bluetooth")
                     .price(800)
                     .quantity(20)
+                    .promotion(true)
                     .build());
             productRepository.save(Product.builder()
                     .name("Écran 27 Pouces")
@@ -86,6 +89,7 @@ public class SpringMvcSecurityApplication {
                     .name("Carte Graphique")
                     .price(4500)
                     .quantity(7)
+                    .promotion(true)
                     .build());
             productRepository.save(Product.builder()
                     .name("Processeur i9")
@@ -112,7 +116,7 @@ public class SpringMvcSecurityApplication {
                     .price(1800)
                     .quantity(14)
                     .build());
-                    
+
             productRepository.findAll().forEach(product -> {
                 System.out.println(product.toString());
             });

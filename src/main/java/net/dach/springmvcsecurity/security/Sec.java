@@ -53,9 +53,10 @@ public class Sec {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .formLogin(f1->f1.loginPage("/login").defaultSuccessUrl("/user/index", true).permitAll())
-                .csrf(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(ar->ar.requestMatchers("/user/**").hasRole("USER"))
                 .authorizeHttpRequests(ar->ar.requestMatchers("/admin/**").hasRole("ADMIN"))
+                .authorizeHttpRequests(ar->ar.requestMatchers("/products/**").permitAll())
                 .authorizeHttpRequests(ar->ar.requestMatchers("/public/**","/webjars/**","/login","/api/suggestions","/search","/cart/**","/notAuthorized").permitAll())
                 .authorizeHttpRequests(ar->ar.anyRequest().authenticated())
                 .exceptionHandling(eh->eh.accessDeniedPage("/notAuthorized"))
